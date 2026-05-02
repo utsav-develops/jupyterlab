@@ -16,6 +16,7 @@ import { IMainMenu } from '@jupyterlab/mainmenu';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { ITranslator } from '@jupyterlab/translation';
 
+import type { Menu } from '@lumino/widgets';
 import scrollbarStyleText from '../style/scrollbar.raw.css';
 
 namespace CommandIDs {
@@ -417,7 +418,7 @@ export const themesPaletteMenuPlugin: JupyterFrontEndPlugin<void> = {
     if (mainMenu) {
       void app.restored.then(() => {
         const isPalette = false;
-
+        const settingsMenu = mainMenu.settingsMenu as unknown as Menu;
         const themeMenu = mainMenu.settingsMenu.items.find(
           item =>
             item.type === 'submenu' &&
@@ -433,6 +434,16 @@ export const themesPaletteMenuPlugin: JupyterFrontEndPlugin<void> = {
             });
           });
         }
+        manager.themeChanged.connect(() => {
+          setTimeout(() => {
+            void app.commands.execute('settingsmenu:open').then(() => {
+              settingsMenu.activeItem =
+                settingsMenu.items.find(item => item.submenu === themeMenu) ??
+                null;
+              settingsMenu.triggerActiveItem();
+            });
+          }, 50);
+        });
       });
     }
 
