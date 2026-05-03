@@ -434,15 +434,27 @@ export const themesPaletteMenuPlugin: JupyterFrontEndPlugin<void> = {
             });
           });
         }
+
+        let lastActiveThemeIndex = -1;
+        let restoring = false;
+
+        // capture last item
+        themeMenu!.node.addEventListener('mouseup', () => {
+          const idx = (themeMenu as any)._activeIndex;
+          if (idx !== -1) lastActiveThemeIndex = idx;
+        });
+
+        // re-open theme submenu after each execution
         manager.themeChanged.connect(() => {
-          setTimeout(() => {
-            void app.commands.execute('settingsmenu:open').then(() => {
-              settingsMenu.activeItem =
-                settingsMenu.items.find(item => item.submenu === themeMenu) ??
-                null;
-              settingsMenu.triggerActiveItem();
-            });
-          }, 50);
+          if (restoring) return;
+          restoring = true;
+          void app.commands.execute('settingsmenu:open').then(() => {
+            settingsMenu.triggerActiveItem();
+            setTimeout(() => {
+              themeMenu!.activeIndex = lastActiveThemeIndex;
+              restoring = false;
+            }, 0);
+          });
         });
       });
     }
